@@ -267,15 +267,15 @@ loader.load(
     if (gltf.animations && gltf.animations.length > 0) {
       catMixer = new THREE.AnimationMixer(model);
       catMixer.clipAction(gltf.animations[0]).play();
-      info.textContent = "猫のモデルとアニメーションを読み込みました！";
+      info.textContent = "牛のモデルとアニメーションを読み込みました！";
     } else {
-      info.textContent = "猫のモデルを読み込みました！";
+      info.textContent = "牛のモデルを読み込みました！";
     }
   },
   undefined,
   (error) => {
-    console.error('猫モデルの読み込みに失敗しました:', error);
-    info.textContent = "猫モデルを読み込めません。GLBの配置とファイル名を確認してください。";
+    console.error('牛モデルの読み込みに失敗しました:', error);
+    info.textContent = "牛モデルを読み込めません。GLBの配置とファイル名を確認してください。";
   }
 );
 
