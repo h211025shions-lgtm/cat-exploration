@@ -268,14 +268,29 @@ loader.load(
     catModel = model;
     catModelBaseY = model.position.y;
 
-    // GLBに歩行などのアニメーションが含まれていれば再生する
-    if (gltf.animations && gltf.animations.length > 0) {
-      catMixer = new THREE.AnimationMixer(model);
-      catMixer.clipAction(gltf.animations[0]).play();
-      info.textContent = "牛のモデルとアニメーションを読み込みました！";
-    } else {
-      info.textContent = "牛のモデルを読み込みました！";
-    }
+    // 牛のアニメーションを登録
+if (gltf.animations && gltf.animations.length > 0) {
+  catMixer = new THREE.AnimationMixer(model);
+
+  gltf.animations.forEach((clip) => {
+    cowActions[clip.name] = catMixer.clipAction(clip);
+  });
+
+  // 最初はIdle（待機）を再生
+  if (cowActions["Idle"]) {
+    currentCowAction = cowActions["Idle"];
+    currentCowAction.play();
+  }
+
+  info.textContent = "牛のモデルと3種類のアニメーションを読み込みました！";
+} else {
+  info.textContent = "牛のモデルを読み込みました！";
+}
+
+  info.textContent = "牛のモデルと3種類のアニメーションを読み込みました！";
+} else {
+  info.textContent = "牛のモデルを読み込みました！";
+}
   },
   undefined,
   (error) => {
