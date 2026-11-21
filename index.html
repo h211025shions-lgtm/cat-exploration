@@ -397,9 +397,40 @@ function animate() {
   if (move.length() > 0.1) {
     cat.rotation.y = Math.atan2(-move.x, -move.z) + Math.PI;
   }
-  // GLB内のアニメーションを再生。ない場合は体全体を小さく上下させる
-  if (catMixer) {
-    catMixer.update(dt);
+// 牛のアニメーションを移動状態に合わせて切り替える
+const moving = move.length() > 0.1;
+
+if (catMixer) {
+  const nextAction = moving
+    ? cowActions["Walk"]
+    : cowActions["Idle"];
+
+  if (nextAction && nextAction !== currentCowAction) {
+    if (currentCowAction) {
+      currentCowAction.fadeOut(0.2);
+    }
+
+    nextAction.reset();
+    nextAction.fadeIn(0.2);
+    nextAction.play();
+
+    currentCowAction = nextAction;
+  }
+
+  catMixer.update(dt);
+
+} else if (catModel) {
+  walkPhase += dt * (moving ? 10 : 2.2);
+
+  const bob = moving
+    ? Math.abs(Math.sin(walkPhase)) * 0.045
+    : Math.sin(walkPhase) * 0.012;
+
+  catModel.position.y = catModelBaseY + bob;
+  catModel.rotation.z = moving
+    ? Math.sin(walkPhase) * 0.025
+    : 0;
+}
   } else if (catModel) {
     const moving = move.length() > 0.1;
     walkPhase += dt * (moving ? 10 : 2.2);
