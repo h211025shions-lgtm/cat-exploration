@@ -164,8 +164,21 @@ let catModelBaseY = 0;
 let catMixer = null;
 let walkPhase = 0;
 const info = document.getElementById('info');
+
+// BGM設定
+const bgm = new Audio('./bgm.mp3');
+bgm.loop = true;
+bgm.volume = 0.3;
+
+// 最初の画面操作でBGMを再生
+document.addEventListener('pointerdown', () => {
+  if (bgm.paused) {
+    bgm.play();
+  }
+}, { once: true });
 // 牛の鳴き声
 const mooSound = new Audio('./moo.mp3');
+mooSound.volume = 0.5;
 
 // 鳴くボタン
 document.getElementById('moo').addEventListener('click', () => {
