@@ -123,6 +123,39 @@ let catMixer = null;
 let walkPhase = 0;
 const info = document.getElementById('info');
 
+// バス停を読み込む
+loader.load(
+  './bus-stop-shelter.glb',
+  (gltf) => {
+    const busStop = gltf.scene;
+
+    // バス停の大きさと位置を取得
+    const bounds = new THREE.Box3().setFromObject(busStop);
+
+    // 地面に接するように高さを調整
+    busStop.position.y -= bounds.min.y;
+
+    // 左上に配置
+    busStop.position.x = -2.85;
+    busStop.position.z = -3.7;
+
+    // 影を設定
+    busStop.traverse((object) => {
+      if (object.isMesh) {
+        object.castShadow = true;
+        object.receiveShadow = true;
+      }
+    });
+
+    scene.add(busStop);
+  },
+  undefined,
+  (error) => {
+    console.error('バス停の読み込みに失敗しました:', error);
+    info.textContent = 'バス停を読み込めません。ファイル名を確認してください。';
+  }
+);
+
 loader.load(
   './cow.glb',
   (gltf) => {
