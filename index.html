@@ -55,6 +55,8 @@ canvas {display:block}
 <script type="module">
 import * as THREE from
 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { GLTFLoader } from
+'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xb8d8e8);
@@ -110,50 +112,52 @@ for(const x of [2,4])
 // 段ボール
 box(3,0.35,3,1.5,0.7,1.3,0xb58b52);
 
-// 猫の仮モデル
+// 猫の操作用グループ
 const cat = new THREE.Group();
 scene.add(cat);
-
-const fur = new THREE.MeshStandardMaterial({color:0xd58b43});
-const cream = new THREE.MeshStandardMaterial({color:0xf4d4a5});
-const dark = new THREE.MeshStandardMaterial({color:0x34251d});
-
-function sphere(parent,x,y,z,sx,sy,sz,mat) {
-  const m = new THREE.Mesh(
-    new THREE.SphereGeometry(1,16,12),mat
-  );
-  m.position.set(x,y,z);
-  m.scale.set(sx,sy,sz);
-  m.castShadow=true;
-  parent.add(m);
-  return m;
-}
-
-// 胴体・頭
-sphere(cat,0,0.5,0,0.38,0.32,0.58,fur);
-sphere(cat,0,0.9,-0.38,0.34,0.34,0.34,fur);
-
-// 耳
-for(const x of [-0.22,0.22]) {
-  const ear=new THREE.Mesh(
-    new THREE.ConeGeometry(0.13,0.3,4),fur
-  );
-  ear.position.set(x,1.2,-0.38);
-  cat.add(ear);
-}
-
-// 顔
-for(const x of [-0.13,0.13])
- sphere(cat,x,0.95,-0.69,0.045,0.055,0.035,dark);
-
-// 鼻
-sphere(cat,0,0.83,-0.72,0.05,0.04,0.035,cream);
-
-// しっぽ
-const tail=sphere(cat,0,0.72,0.62,0.1,0.1,0.4,fur);
-tail.rotation.x=-0.5;
-
 cat.position.set(0,0,2);
+
+// GLB形式の猫モデルを読み込む
+const loader = new GLTFLoader();
+const info = document.getElementById('info');
+
+loader.load(
+  './cat-light.glb',
+  (gltf) => {
+    const model = gltf.scene;
+
+    // モデルの大きさを測り、高さ約1.3に調整する
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    if (size.y > 0) {
+      const scale = 1.3 / size.y;
+      model.scale.setScalar(scale);
+
+      // モデルの中心を猫の位置に合わせ、足元を地面に置く
+      model.position.x = -center.x * scale;
+      model.position.z = -center.z * scale;
+      model.position.y = -box.min.y * scale;
+    }
+
+    // モデル全体に影の設定を適用する
+    model.traverse((object) => {
+      if (object.isMesh) {
+        object.castShadow = true;
+        object.receiveShadow = true;
+      }
+    });
+
+    cat.add(model);
+    info.textContent = "猫のモデルを読み込みました！";
+  },
+  undefined,
+  (error) => {
+    console.error('猫モデルの読み込みに失敗しました:', error);
+    info.textContent = "猫モデルを読み込めません。GLBの配置とファイル名を確認してください。";
+  }
+);
 
 // 操作
 let joyX=0, joyY=0;
