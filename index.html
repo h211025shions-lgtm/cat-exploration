@@ -481,6 +481,7 @@ interaction.style.display =
 }
 animate();
 
+const moving = move.length() > 0.1;
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
