@@ -247,13 +247,13 @@ loader.load(
     const center = box.getCenter(new THREE.Vector3());
 
     if (size.y > 0) {
-      const scale = 0.6 / size.y;
+      const scale = 0.8 / size.y;
       model.scale.setScalar(scale);
 
       // モデルの中心を猫の位置に合わせ、足元を地面に置く
       model.position.x = -center.x * scale;
       model.position.z = -center.z * scale;
-      model.position.y = -box.min.y * scale;
+      model.position.y = -box.min.y * scale - 0.15;
     }
 
     // モデル全体に影の設定を適用する
