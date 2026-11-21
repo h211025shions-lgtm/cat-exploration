@@ -268,29 +268,23 @@ loader.load(
     catModel = model;
     catModelBaseY = model.position.y;
 
-    // 牛のアニメーションを登録
-if (gltf.animations && gltf.animations.length > 0) {
-  catMixer = new THREE.AnimationMixer(model);
+        // 牛のアニメーションを登録
+    if (gltf.animations && gltf.animations.length > 0) {
+      catMixer = new THREE.AnimationMixer(model);
 
-  gltf.animations.forEach((clip) => {
-    cowActions[clip.name] = catMixer.clipAction(clip);
-  });
+      gltf.animations.forEach((clip) => {
+        cowActions[clip.name] = catMixer.clipAction(clip);
+      });
 
-  // 最初はIdle（待機）を再生
-  if (cowActions["Idle"]) {
-    currentCowAction = cowActions["Idle"];
-    currentCowAction.play();
-  }
+      if (cowActions["Idle"]) {
+        currentCowAction = cowActions["Idle"];
+        currentCowAction.play();
+      }
 
-  info.textContent = "牛のモデルと3種類のアニメーションを読み込みました！";
-} else {
-  info.textContent = "牛のモデルを読み込みました！";
-}
-
-  info.textContent = "牛のモデルと3種類のアニメーションを読み込みました！";
-} else {
-  info.textContent = "牛のモデルを読み込みました！";
-}
+      info.textContent = "牛のモデルとアニメーションを読み込みました！";
+    } else {
+      info.textContent = "牛のモデルを読み込みました！";
+    }
   },
   undefined,
   (error) => {
@@ -397,46 +391,36 @@ function animate() {
   if (move.length() > 0.1) {
     cat.rotation.y = Math.atan2(-move.x, -move.z) + Math.PI;
   }
-// 牛のアニメーションを移動状態に合わせて切り替える
-const moving = move.length() > 0.1;
+  
+  // 牛のアニメーションを移動状態に合わせて切り替える
+  const moving = move.length() > 0.1;
 
-if (catMixer) {
-  const nextAction = moving
-    ? cowActions["Walk"]
-    : cowActions["Idle"];
+  if (catMixer) {
+    const nextAction = moving
+      ? cowActions["Walk"]
+      : cowActions["Idle"];
 
-  if (nextAction && nextAction !== currentCowAction) {
-    if (currentCowAction) {
-      currentCowAction.fadeOut(0.2);
+    if (nextAction && nextAction !== currentCowAction) {
+      if (currentCowAction) {
+        currentCowAction.fadeOut(0.2);
+      }
+
+      nextAction.reset();
+      nextAction.fadeIn(0.2);
+      nextAction.play();
+
+      currentCowAction = nextAction;
     }
 
-    nextAction.reset();
-    nextAction.fadeIn(0.2);
-    nextAction.play();
+    catMixer.update(dt);
 
-    currentCowAction = nextAction;
-  }
-
-  catMixer.update(dt);
-
-} else if (catModel) {
-  walkPhase += dt * (moving ? 10 : 2.2);
-
-  const bob = moving
-    ? Math.abs(Math.sin(walkPhase)) * 0.045
-    : Math.sin(walkPhase) * 0.012;
-
-  catModel.position.y = catModelBaseY + bob;
-  catModel.rotation.z = moving
-    ? Math.sin(walkPhase) * 0.025
-    : 0;
-}
   } else if (catModel) {
-    const moving = move.length() > 0.1;
     walkPhase += dt * (moving ? 10 : 2.2);
+
     const bob = moving
       ? Math.abs(Math.sin(walkPhase)) * 0.045
       : Math.sin(walkPhase) * 0.012;
+
     catModel.position.y = catModelBaseY + bob;
     catModel.rotation.z = moving
       ? Math.sin(walkPhase) * 0.025
@@ -481,7 +465,6 @@ interaction.style.display =
 }
 animate();
 
-const moving = move.length() > 0.1;
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
