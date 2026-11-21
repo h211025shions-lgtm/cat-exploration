@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Neko's Little Adventure</title>
+<style>
+html,body {
+  margin:0; padding:0; overflow:hidden;
+  width:100%; height:100%;
+  background:#b8d8e8;
+  font-family:sans-serif;
+  touch-action:none;
+}
+canvas {display:block}
+#info {
+  position:absolute; top:12px; left:12px;
+  color:white; background:#0008;
+  padding:9px 12px; border-radius:10px;
+  font-size:13px; pointer-events:none;
+}
+#stick {
+  position:absolute; bottom:35px; left:25px;
+  width:110px; height:110px;
+  border-radius:50%; background:#ffffff55;
+  border:2px solid #ffffffaa;
+  touch-action:none;
+}
+#knob {
+  position:absolute; width:45px; height:45px;
+  left:31px; top:31px; border-radius:50%;
+  background:#ffffffcc;
+}
+#jump {
+  position:absolute; right:30px; bottom:45px;
+  width:78px; height:78px; border-radius:50%;
+  border:2px solid white; background:#e9a45bdd;
+  color:white; font-size:17px; font-weight:bold;
+  touch-action:none;
+}
+#hint {
+  position:absolute; top:55px; left:12px;
+  color:white; background:#0007; padding:7px;
+  border-radius:8px; font-size:11px;
+}
+</style>
+</head>
+<body>
+<div id="info">Neko's Little Adventure</div>
+<div id="hint">左：移動 / 右：カメラ / JUMP：ジャンプ</div>
+<div id="stick"><div id="knob"></div></div>
+<button id="jump">JUMP</button>
+
+<script type="module">
+import * as THREE from
+'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xb8d8e8);
+
+const camera = new THREE.PerspectiveCamera(
+  65, innerWidth/innerHeight, 0.1, 100
+);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x777766,2));
+
+const sun = new THREE.DirectionalLight(0xffffff,2);
+sun.position.set(5,10,5);
+sun.castShadow=true;
+scene.add(sun);
+
+// 床
+function box(x,y,z,w,h,d,color) {
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(w,h,d),
+    new THREE.MeshStandardMaterial({color})
+  );
+  m.position.set(x,y,z);
+  m.castShadow=true;
+  m.receiveShadow=true;
+  scene.add(m);
+  return m;
+}
+
+box(0,-0.2,0,18,0.4,14,0xc8a77b);
+
+// 壁
+box(0,2,-7,18,4,0.3,0xf0dfc8);
+box(-9,2,0,0.3,4,14,0xf0dfc8);
+box(9,2,0,0.3,4,14,0xf0dfc8);
+box(0,2,7,18,4,0.3,0xf0dfc8);
+
+// ソファ
+box(-3,0.65,-2,3.5,1.3,1.2,0x8d6659);
+box(-3,1.35,-2.5,3.5,0.5,0x9d7565);
+
+// テーブル
+box(3,0.9,-1,2.5,0.2,1.5,0x9b6843);
+for(const x of [2,4])
+ for(const z of [-1.5,-0.5])
+  box(x,0.4,z,0.12,0.8,0.12,0x69442e);
+
+// 段ボール
+box(3,0.35,3,1.5,0.7,1.3,0xb58b52);
+
+// 猫の仮モデル
+const cat = new THREE.Group();
+scene.add(cat);
+
+const fur = new THREE.MeshStandardMaterial({color:0xd58b43});
+const cream = new THREE.MeshStandardMaterial({color:0xf4d4a5});
+const dark = new THREE.MeshStandardMaterial({color:0x34251d});
+
+function sphere(parent,x,y,z,sx,sy,sz,mat) {
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(1,16,12),mat
+  );
+  m.position.set(x,y,z);
+  m.scale.set(sx,sy,sz);
+  m.castShadow=true;
+  parent.add(m);
+  return m;
+}
+
+// 胴体・頭
+sphere(cat,0,0.5,0,0.38,0.32,0.58,fur);
+sphere(cat,0,0.9,-0.38,0.34,0.34,0.34,fur);
+
+// 耳
+for(const x of [-0.22,0.22]) {
+  const ear=new THREE.Mesh(
+    new THREE.ConeGeometry(0.13,0.3,4),fur
+  );
+  ear.position.set(x,1.2,-0.38);
+  cat.add(ear);
+}
+
+// 顔
+for(const x of [-0.13,0.13])
+ sphere(cat,x,0.95,-0.69,0.045,0.055,0.035,dark);
+
+// 鼻
+sphere(cat,0,0.83,-0.72,0.05,0.04,0.035,cream);
+
+// しっぽ
+const tail=sphere(cat,0,0.72,0.62,0.1,0.1,0.4,fur);
+tail.rotation.x=-0.5;
+
+cat.position.set(0,0,2);
+
+// 操作
+let joyX=0, joyY=0;
+let yaw=0, velocityY=0, grounded=true;
+let cameraPointer=null;
+let lastX=0;
+
+const stick=document.getElementById('stick');
+const knob=document.getElementById('knob');
+
+stick.addEventListener('pointerdown',e=>{
+  stick.setPointerCapture(e.pointerId);
+  moveStick(e);
+});
+
+stick.addEventListener('pointermove',e=>{
+  if(e.buttons) moveStick(e);
+});
+
+function moveStick(e) {
+  const r=stick.getBoundingClientRect();
+  let x=e.clientX-(r.left+r.width/2);
+  let y=e.clientY-(r.top+r.height/2);
+  const len=Math.hypot(x,y);
+  if(len>35){x*=35/len;y*=35/len;}
+  joyX=x/35;
+  joyY=y/35;
+  knob.style.transform=`translate(${x}px,${y}px)`;
+}
+
+function resetStick() {
+  joyX=0; joyY=0;
+  knob.style.transform='translate(0px,0px)';
+}
+stick.addEventListener('pointerup',resetStick);
+stick.addEventListener('pointercancel',resetStick);
+
+// 右側スワイプでカメラ操作
+renderer.domElement.addEventListener('pointerdown',e=>{
+  cameraPointer=e.pointerId;
+  lastX=e.clientX;
+  renderer.domElement.setPointerCapture(e.pointerId);
+});
+
+renderer.domElement.addEventListener('pointermove',e=>{
+  if(cameraPointer===e.pointerId) {
+    yaw-=(e.clientX-lastX)*0.006;
+    lastX=e.clientX;
+  }
+});
+
+renderer.domElement.addEventListener('pointerup',()=>{
+  cameraPointer=null;
+});
+
+function jump() {
+  if(grounded) {
+    velocityY=5;
+    grounded=false;
+  }
+}
+document.getElementById('jump')
+.addEventListener('pointerdown',jump);
+
+// カメラと移動
+const clock=new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+
+  const speed=3;
+  const forward=new THREE.Vector3(
+    -Math.sin(yaw),0,-Math.cos(yaw)
+  );
+  const right=new THREE.Vector3(
+    Math.cos(yaw),0,-Math.sin(yaw)
+  );
+
+  const move=new THREE.Vector3()
+    .addScaledVector(right,joyX)
+    .addScaledVector(forward,-joyY);
+
+  if(move.length()>1) move.normalize();
+
+  cat.position.addScaledVector(move,speed*dt);
+
+  if(move.length()>0.1) {
+    cat.rotation.y=Math.atan2(-move.x,-move.z);
+  }
+
+  velocityY-=12*dt;
+  cat.position.y+=velocityY*dt;
+
+  if(cat.position.y<=0) {
+    cat.position.y=0;
+    velocityY=0;
+    grounded=true;
+  }
+
+  // 家の外に出ないようにする
+  cat.position.x=THREE.MathUtils.clamp(cat.position.x,-8,8);
+  cat.position.z=THREE.MathUtils.clamp(cat.position.z,-6,6);
+
+  // 猫を追いかけるカメラ
+  const offset=new THREE.Vector3(
+    Math.sin(yaw)*5,3,Math.cos(yaw)*5
+  );
+
+  const target=cat.position.clone()
+    .add(new THREE.Vector3(0,0.7,0));
+
+  camera.position.lerp(
+    target.clone().add(offset),0.1
+  );
+  camera.lookAt(target);
+
+  renderer.render(scene,camera);
+}
+animate();
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
