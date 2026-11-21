@@ -123,7 +123,7 @@ const cat = new THREE.Group();
 scene.add(cat);
 cat.position.set(0,0,2);
 // 開始時はカメラから見て後ろ向き（部屋の奥・-Z方向）
-cat.rotation.y = 0;
+cat.rotation.y = 180;
 
 // GLB形式の猫モデルを読み込む
 const loader = new GLTFLoader();
@@ -171,7 +171,7 @@ loader.load(
       catMixer.clipAction(gltf.animations[0]).play();
       info.textContent = "猫のモデルとアニメーションを読み込みました！";
     } else {
-      info.textContent = "猫のモデルを読み込みました！";
+      info.textContent = "牛のモデルを読み込みました！";
     }
   },
   undefined,
