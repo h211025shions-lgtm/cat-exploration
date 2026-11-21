@@ -5,29 +5,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Neko's Little Adventure</title>
-#interaction {
-  display:none;
-  position:absolute;
-  left:50%;
-  bottom:145px;
-  transform:translateX(-50%);
-  background:#222d;
-  padding:12px;
-  border-radius:12px;
-  color:white;
-  text-align:center;
-  min-width:190px;
-}
-
-#interaction button {
-  margin:5px;
-  padding:10px 18px;
-  border:0;
-  border-radius:8px;
-  background:#ffffff;
-  color:#222;
-  font-weight:bold;
-}
 <style>
 html,body {
   margin:0; padding:0; overflow:hidden;
@@ -66,6 +43,29 @@ canvas {display:block}
   position:absolute; top:55px; left:12px;
   color:white; background:#0007; padding:7px;
   border-radius:8px; font-size:11px;
+}
+#interaction {
+  display:none;
+  position:absolute;
+  left:50%;
+  bottom:145px;
+  transform:translateX(-50%);
+  background:#222d;
+  padding:12px;
+  border-radius:12px;
+  color:white;
+  text-align:center;
+  min-width:190px;
+}
+
+#interaction button {
+  margin:5px;
+  padding:10px 18px;
+  border:0;
+  border-radius:8px;
+  background:#ffffff;
+  color:#222;
+  font-weight:bold;
 }
 </style>
 </head>
@@ -150,6 +150,18 @@ let catModelBaseY = 0;
 let catMixer = null;
 let walkPhase = 0;
 const info = document.getElementById('info');
+// インタラクションメニュー
+const interaction = document.getElementById('interaction');
+
+// 「座る」ボタン
+document.getElementById('sitButton').addEventListener('click', () => {
+  info.textContent = 'ベンチに座ろうとしています！';
+});
+
+// 「調べる」ボタン
+document.getElementById('inspectButton').addEventListener('click', () => {
+  info.textContent = 'バス停を調べています！';
+});
 
 // バス停を読み込む
 loader.load(
@@ -366,7 +378,19 @@ function animate() {
     target.clone().add(offset),0.1
   );
   camera.lookAt(target);
+// バス停との距離を確認
+const busStopX = -3.45;
+const busStopZ = -5.05;
 
+const busStopDistance = Math.sqrt(
+  Math.pow(cat.position.x - busStopX, 2) +
+  Math.pow(cat.position.z - busStopZ, 2)
+);
+
+// バス停から2.5以内ならメニューを表示
+interaction.style.display =
+  busStopDistance < 2.5 ? 'block' : 'none';
+  
   renderer.render(scene,camera);
 }
 animate();
